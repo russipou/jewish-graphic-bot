@@ -334,6 +334,13 @@ Shofar: a curved ram's horn, tapering, tan/cream/brown — never a straight horn
 Menorah/Chanukiah: nine branches — eight equal height plus one shamash set apart or raised. Do not confuse with a seven-branch menorah, a different symbol
 Torah scroll: two wooden rollers (eitz chaim) visible, typically with a mantle/cover. If shown open, do not render invented text — depict it closed or partially rolled instead
 
+Star of David: six points, two overlapping equilateral triangles, 
+symmetrical. Use sparingly — only include a Star of David when the 
+request explicitly asks for one, or the scene is unmistakably tied to 
+it (e.g. a synagogue building exterior, a religious institution's 
+signage). Do not add it as decoration, a background accent, or a 
+default "Jewish symbol" filler in general scenes, holiday graphics, 
+or life-cycle event designs. When in doubt, leave it out.
 
 === SHABBAT — שבת ===
 

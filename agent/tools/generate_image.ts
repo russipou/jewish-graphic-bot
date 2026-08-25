@@ -18,10 +18,17 @@ const MAX_REVIEW_RETRIES = 2;
 // system prompt. The review file is plain prose and falls through to raw.
 const TEMPLATE_LITERAL_PATTERN = /=\s*`([\s\S]*)`;\s*$/;
 
-// Read fresh on every request (not a hardcoded constant) so staff can edit
-// the content policy without a code change or redeploy.
-async function loadPromptFile(fileName: string): Promise<string> {
-  const raw = await readFile(path.join(process.cwd(), fileName), "utf-8");
+// Resolved fresh on every request so staff can edit the content policy
+// without a code change. The env var wins when set (the deployed source of
+// truth on Vercel); the repo's .md file is the fallback for local dev. The
+// wrapper strip applies to both, so pasting the file verbatim into the
+// Vercel dashboard works.
+async function loadPrompt(envName: string, fileName: string): Promise<string> {
+  const fromEnv = process.env[envName];
+  const raw =
+    fromEnv && fromEnv.trim().length > 0
+      ? fromEnv
+      : await readFile(path.join(process.cwd(), fileName), "utf-8");
   const match = raw.match(TEMPLATE_LITERAL_PATTERN);
   return match ? match[1]! : raw;
 }
@@ -31,7 +38,7 @@ async function buildCompliantPrompt(
   apiKey: string,
   signal: AbortSignal,
 ): Promise<string> {
-  const template = await loadPromptFile(RULES_FILE_NAME);
+  const template = await loadPrompt("CREATION_AI_PROMPT", RULES_FILE_NAME);
   const filledTemplate = template.replace("{userMessage}", () => userMessage);
 
   const response = await fetch(OPENROUTER_CHAT_URL, {
@@ -160,8 +167,8 @@ const REVIEW_CHECKS: Record<string, { label: string; fix: string }> = {
     label: "mixed-gender seating or dancing",
     fix: "Show men and women seated and dancing in separate groups — never mixed together.",
   },
-  cross_gender_contact_between_unmarried_adults: {
-    label: "cross-gender contact between unmarried adults",
+  cross_gender_physical_contact: {
+    label: "cross-gender physical contact",
     fix: "Remove all physical contact between adult men and women; keep them at a respectful distance.",
   },
   hebrew_text_garbled_backwards_or_repeated: {
@@ -229,7 +236,7 @@ async function reviewImage(
   signal: AbortSignal,
 ): Promise<ReviewVerdict> {
   try {
-    const reviewPrompt = await loadPromptFile(REVIEW_FILE_NAME);
+    const reviewPrompt = await loadPrompt("REVIEW_AI_PROMPT", REVIEW_FILE_NAME);
 
     const response = await fetch(OPENROUTER_CHAT_URL, {
       method: "POST",
