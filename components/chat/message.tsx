@@ -683,6 +683,11 @@ function ToolDetails({
   readonly part: EveDynamicToolPart;
 }) {
   const hasOutput = part.state === "output-available" || part.state === "output-error";
+  // A question renders as its own prompt-and-buttons UI (and a "Responded"
+  // chip once answered); the raw request/response payloads would put the same
+  // {id, label, style} JSON on screen next to it. Approvals keep their
+  // payloads — the input shows what the user is approving.
+  const isQuestion = part.toolMetadata?.eve?.inputRequest?.kind === "question";
 
   return (
     <div className="space-y-1.5">
@@ -691,8 +696,8 @@ function ToolDetails({
         onInputResponses={onInputResponses}
         part={part}
       />
-      <ToolPayload label="input" value={part.input} />
-      {hasOutput ? (
+      {isQuestion ? null : <ToolPayload label="input" value={part.input} />}
+      {hasOutput && (!isQuestion || part.state === "output-error") ? (
         <ToolPayload
           label={part.state === "output-error" ? "error" : "result"}
           tone={part.state === "output-error" ? "destructive" : "default"}

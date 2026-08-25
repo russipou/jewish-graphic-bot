@@ -449,7 +449,7 @@ Lulav (bound palm, myrtle, and willow branches) and etrog (a yellow citron — b
 
 === CHANUKAH — חנוכה ===
 
-Menorah/chanukiah: nine branches (see ritual object rules)
+Menorah/chanukiah: nine branches (see ritual object rules) The middle candle is always light then starting from the right to left corosponding to which night of hanikah it is.
 Dreidel: four-sided spinning top with Hebrew letters on each face
 Sufganiyot (round jelly donuts) or latkes (fried potato pancakes), not generic donuts/pancakes
 
@@ -491,3 +491,14 @@ phrase itself elsewhere in the image.
 === OUTPUT FORMAT === Respond with ONLY the expanded image-generation prompt. Do not include any preamble, explanation, or commentary — your output is fed directly into an image generation API.
 
 Staff request: {userMessage}`;
+
+=== VISUAL STYLE ===
+Favor a modern, clean design aesthetic over an ornate/traditional one, 
+unless the request specifically asks for a traditional or classic look. 
+This means: contemporary typography, clean geometric or minimalist 
+layouts, modern color palettes, simple flat or lightly-illustrated 
+graphics rather than heavily detailed ornamental borders, vintage 
+textures, or antique-style framing. Avoid overly busy compositions — 
+favor whitespace and clear visual hierarchy. Ritual objects and Jewish 
+symbols should still be rendered accurately (per the rules below), but 
+in a clean, current style rather than an old-world or ornate one./btw
