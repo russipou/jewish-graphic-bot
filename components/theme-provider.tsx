@@ -4,15 +4,11 @@ import { useEffect, type ReactNode } from "react";
 
 type Theme = "dark" | "light";
 
+// Brand decision: always the light (white/blue) theme — do not follow the OS
+// color-scheme preference.
 export function ThemeProvider({ children }: { readonly children: ReactNode }) {
   useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const syncTheme = () => applyTheme(media.matches ? "dark" : "light");
-
-    syncTheme();
-    media.addEventListener("change", syncTheme);
-
-    return () => media.removeEventListener("change", syncTheme);
+    applyTheme("light");
   }, []);
 
   return children;

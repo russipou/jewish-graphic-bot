@@ -341,6 +341,7 @@ it (e.g. a synagogue building exterior, a religious institution's
 signage). Do not add it as decoration, a background accent, or a 
 default "Jewish symbol" filler in general scenes, holiday graphics, 
 or life-cycle event designs. When in doubt, leave it out.
+Never put in star of david ONLY in a shul setting.
 
 === SHABBAT — שבת ===
 

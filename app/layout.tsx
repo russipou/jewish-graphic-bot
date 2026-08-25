@@ -8,8 +8,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
-const title = "eve Chat Template";
-const description = "Build your own chat agent with eve.";
+const title = "Jewish Bot";
+const description = "Create beautiful Jewish graphics with AI.";
 const ogImage = {
   alt: title,
   height: 630,
@@ -65,21 +65,14 @@ export const metadata: Metadata = {
   },
 };
 
+// Brand decision: the app always renders the light (white/blue) theme,
+// regardless of the OS color-scheme preference.
 const themeScript = `
 (() => {
-  try {
-    const theme = window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-    const root = document.documentElement;
-    root.classList.remove("dark", "light");
-    root.classList.add(theme);
-    root.style.colorScheme = theme;
-  } catch {
-    const root = document.documentElement;
-    root.classList.add("dark");
-    root.style.colorScheme = "dark";
-  }
+  const root = document.documentElement;
+  root.classList.remove("dark");
+  root.classList.add("light");
+  root.style.colorScheme = "light";
 })();
 `;
 
