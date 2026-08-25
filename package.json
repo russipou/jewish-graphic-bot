@@ -22,6 +22,7 @@
     "start:eve": "eve start"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.37",
     "@neondatabase/serverless": "1.1.0",
     "@shikijs/core": "4.3.1",
     "@shikijs/engine-javascript": "4.3.1",

@@ -5,6 +5,7 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   CheckIcon,
+  DownloadIcon,
   Loader2Icon,
   XIcon,
 } from "lucide-react";
@@ -113,6 +114,12 @@ function AgentMessageParts({
 
   parts.forEach((part, index) => {
     if (part.type === "dynamic-tool") {
+      if (isGeneratedImagePart(part)) {
+        flushTools(true);
+        elements.push(<GeneratedImagePart key={part.toolCallId} part={part} />);
+        return;
+      }
+
       pendingTools.push(part);
       return;
     }
@@ -352,6 +359,185 @@ function ReasoningPart({
       </CollapsibleContent>
     </Collapsible>
   );
+}
+
+const GENERATED_IMAGE_TOOL_NAME = "generate_image";
+
+function isGeneratedImagePart(part: EveDynamicToolPart) {
+  return (
+    resolveToolName(part) === GENERATED_IMAGE_TOOL_NAME && part.state === "output-available"
+  );
+}
+
+type GeneratedImageAttempt = {
+  readonly attempt?: unknown;
+  readonly status?: unknown;
+  readonly issues?: unknown;
+};
+
+type GeneratedImageOutput = {
+  readonly attempt?: unknown;
+  readonly attempts?: unknown;
+  readonly base64?: unknown;
+  readonly issues?: unknown;
+  readonly mediaType?: unknown;
+  readonly note?: unknown;
+  readonly phase?: unknown;
+  readonly prompt?: unknown;
+};
+
+function describeAttempt(entry: GeneratedImageAttempt): string | null {
+  if (typeof entry.attempt !== "number" || typeof entry.status !== "string") {
+    return null;
+  }
+
+  const issues = Array.isArray(entry.issues)
+    ? entry.issues.filter((issue): issue is string => typeof issue === "string")
+    : [];
+
+  switch (entry.status) {
+    case "passed":
+      return `Attempt ${entry.attempt} — passed review`;
+    case "failed":
+      return `Attempt ${entry.attempt} — issue found: ${issues.join("; ")}`;
+    case "review-error":
+      return `Attempt ${entry.attempt} — review could not be completed`;
+    default:
+      return null;
+  }
+}
+
+function GeneratedImageAttemptLog({ attempts }: { readonly attempts: unknown }) {
+  if (!Array.isArray(attempts)) {
+    return null;
+  }
+
+  const lines = attempts
+    .map((entry) => describeAttempt(entry as GeneratedImageAttempt))
+    .filter((line): line is string => line !== null);
+
+  if (lines.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+      {lines.map((line) => (
+        <span key={line}>{line}</span>
+      ))}
+    </div>
+  );
+}
+
+// Preliminary generator snapshots ("generating", "reviewing", "retrying")
+// arrive with `partial: true` and no image data; render them as brief status
+// lines so review progress shows in the chat before the final image lands.
+function GeneratedImageProgress({ output }: { readonly output: GeneratedImageOutput }) {
+  const issues = Array.isArray(output.issues)
+    ? output.issues.filter((issue): issue is string => typeof issue === "string")
+    : [];
+
+  let status = "Generating image...";
+  if (output.phase === "reviewing") {
+    status = "Reviewing image...";
+  } else if (output.phase === "retrying") {
+    status = issues.length > 0 ? `Issue found: ${issues.join("; ")} — regenerating` : "Issues found — regenerating";
+  }
+
+  return (
+    <div className="my-2 flex flex-col items-start gap-1 px-3">
+      <span className="shimmer-text text-sm text-muted-foreground">{status}</span>
+      <GeneratedImageAttemptLog attempts={output.attempts} />
+    </div>
+  );
+}
+
+function GeneratedImagePart({ part }: { readonly part: EveDynamicToolPart }) {
+  if (part.state !== "output-available") {
+    return null;
+  }
+
+  const output = part.output as GeneratedImageOutput;
+
+  if (part.partial === true || typeof output.base64 !== "string" || typeof output.mediaType !== "string") {
+    return <GeneratedImageProgress output={output} />;
+  }
+
+  const base64 = output.base64;
+  const mediaType = output.mediaType;
+  const alt = typeof output.prompt === "string" ? output.prompt : "Generated image";
+  const reviewNote = typeof output.note === "string" ? output.note : null;
+
+  return (
+    <div className="my-2 flex flex-col items-start gap-2 px-3">
+      {/* eslint-disable-next-line @next/next/no-img-element -- base64 data URI, not an optimizable remote asset */}
+      <img
+        alt={alt}
+        className="max-w-full rounded-lg border border-border/50 shadow-sm"
+        src={`data:${mediaType};base64,${base64}`}
+      />
+      <GeneratedImageAttemptLog attempts={output.attempts} />
+      {reviewNote ? <p className="text-xs text-amber-600 dark:text-amber-500">{reviewNote}</p> : null}
+      <Button
+        onClick={() => downloadImageAsPng(base64, mediaType, slugifyForFilename(alt))}
+        size="xs"
+        type="button"
+        variant="outline"
+      >
+        <DownloadIcon />
+        Download PNG
+      </Button>
+    </div>
+  );
+}
+
+// Re-encodes through a canvas rather than saving the raw bytes verbatim: the
+// source image isn't always PNG (the model sometimes returns JPEG), and this
+// button always offers a PNG regardless of the source encoding.
+function downloadImageAsPng(base64: string, mediaType: string, filenameBase: string) {
+  const image = new Image();
+
+  image.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return;
+    }
+
+    context.drawImage(image, 0, 0);
+
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${filenameBase}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      // Some browsers need the blob URL to stay valid a moment past the
+      // click before revoking it, or the download can fail silently.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, "image/png");
+  };
+
+  image.src = `data:${mediaType};base64,${base64}`;
+}
+
+function slugifyForFilename(text: string) {
+  const slug = text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+
+  return slug || "generated-image";
 }
 
 function ToolGroup({
